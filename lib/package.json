@@ -1,7 +1,7 @@
 {
-  "name": "vosk-browser",
-  "version": "0.0.8",
-  "description": "Kaldi in-browser speech recognition based on a WASM build of the Vosk library",
+  "name": "vosk-browserli",
+  "version": "0.0.9",
+  "description": "Fork of ccoreilly's vosk-browser to enable mbr vectors on partial results. Praise kaldi",
   "main": "./dist/vosk.js",
   "module": "./dist/vosk.js",
   "scripts": {
@@ -18,7 +18,7 @@
   "author": "Ciaran O'Reilly <ciaran@oreilly.cat>",
   "repository": {
     "type": "git",
-    "url": "git://github.com/ccoreilly/vosk-browser.git"
+    "url": "git://github.com/schlawg/vosk-browser.git"
   },
   "license": "Apache-2.0",
   "dependencies": {
