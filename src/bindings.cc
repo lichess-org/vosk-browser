@@ -50,6 +50,11 @@ static void Recognizer_SetWords(Recognizer &self, int words) {
     self.SetWords(words);
 }
 
+static void Recognizer_SetPartialWords(Recognizer &self, int partial_words) {
+    KALDI_VLOG(2) << "Setting partial_words to " << partial_words;
+    self.SetPartialWords(partial_words);
+}
+
 static bool Recognizer_AcceptWaveform(Recognizer &self, long jsHeapAddr, int len) {
     const float *fdata = (const float*) jsHeapAddr;
     KALDI_VLOG(3) << "AcceptWaveform received len=" << len << " 0=" << fdata[0] << " " << len-1 << "=" << fdata[len-1];
@@ -102,6 +107,7 @@ EMSCRIPTEN_BINDINGS(vosk) {
         .constructor(&makeRecognizerWithGrammar, allow_raw_pointers())
         .constructor<Model *, float>(allow_raw_pointers())
         .function("SetWords", &Recognizer_SetWords)
+        .function("SetPartialWords", &Recognizer_SetPartialWords)
         .function("AcceptWaveform", &Recognizer_AcceptWaveform)
         .function("Result", &Recognizer_Result)
         .function("FinalResult", &Recognizer_FinalResult)

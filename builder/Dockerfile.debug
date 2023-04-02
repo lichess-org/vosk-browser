@@ -1,0 +1,18 @@
+# FROM dockcross/web-wasm:20210901-4a98c0e
+FROM dockcross/web-wasm
+
+ENV PATH="/emsdk/upstream/bin:$PATH"
+
+RUN apt-get update \
+    && apt-get install -y \
+    subversion python2 \
+    zlib1g-dev \
+    unzip sox \
+    gfortran \
+    libc6-dev-i386
+
+WORKDIR /opt/kaldi
+RUN git clone -b vosk --single-branch https://github.com/alphacep/kaldi .
+ADD kaldi.patch /tmp
+RUN git apply -v /tmp/kaldi.patch
+ENTRYPOINT ["tail", "-f", "/dev/null"]

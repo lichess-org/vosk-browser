@@ -7,6 +7,7 @@ export declare class Recognizer {
   constructor(model: Model, sampleRate: number);
   constructor(model: Model, sampleRate: number, grammar: string);
   public SetWords(words: boolean): void;
+  public SetPartialWords(partialWords: boolean): void;
   public AcceptWaveform(address: number, length: number): boolean;
   public Result(): string;
   public PartialResult(): string;
