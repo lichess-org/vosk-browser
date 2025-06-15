@@ -10,7 +10,7 @@ export interface ClientMessageTerminate {
 export interface ClientMessageRecognizerSet {
   action: 'set';
   recognizerId: string;
-  key: 'words';
+  key: 'words' | 'partialWords' | 'reset';
   value: boolean;
 }
 

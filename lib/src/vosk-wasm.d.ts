@@ -6,6 +6,7 @@ export declare class Model {
 export declare class Recognizer {
   constructor(model: Model, sampleRate: number);
   constructor(model: Model, sampleRate: number, grammar: string);
+  public Reset(): void;
   public SetWords(words: boolean): void;
   public SetPartialWords(partialWords: boolean): void;
   public AcceptWaveform(address: number, length: number): boolean;

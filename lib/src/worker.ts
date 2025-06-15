@@ -13,6 +13,7 @@ export interface Recognizer {
   sampleRate: number;
   words?: boolean;
   grammar?: string;
+  partialWords?: boolean;
 }
 export class RecognizerWorker {
   private Vosk: VoskWasm.Vosk;
@@ -61,11 +62,13 @@ export class RecognizerWorker {
     }
 
     if (ClientMessage.isAudioChunkMessage(message)) {
+      const gar = Date.now();
       this.processAudioChunk(message)
         .then(result => {
           ctx.postMessage(result);
         })
         .catch(error => ctx.postMessage({ event: 'error', recognizerId: message.recognizerId, error: error.message }));
+      this.logger.warn(`processAudioChunk took ${Date.now() - gar}ms`);
       return;
     }
 
@@ -198,26 +201,49 @@ export class RecognizerWorker {
 
     switch (key) {
       case 'words':
-        const { recognizerId, value } = message;
-        this.logger.verbose(`Recognizer (id: ${recognizerId}): set ${key} to ${value}`);
+        {
+          const { recognizerId, value } = message;
+          this.logger.verbose(`Recognizer (id: ${recognizerId}): set ${key} to ${value}`);
 
-        if (!this.recognizers.has(recognizerId)) {
-          this.logger.warn(`Recognizer not ready, ignoring`);
-          return;
+          if (!this.recognizers.has(recognizerId)) {
+            this.logger.warn(`Recognizer not ready, ignoring`);
+            return;
+          }
+
+          const recognizer = this.recognizers.get(recognizerId)!;
+          recognizer.words = value;
+          recognizer.recognizer.SetWords(value);
         }
-
-        const recognizer = this.recognizers.get(recognizerId)!;
-        recognizer.words = value;
-        recognizer.recognizer.SetWords(value);
-        recognizer.recognizer.SetPartialWords(value);
         break;
-      case 'logLevel':
-        const level = message.value;
-        this.logger.verbose(`Set ${key} to ${level}`);
-        if (this.Vosk) {
-          this.Vosk.SetLogLevel(level);
+      case 'partialWords':
+        {
+          const { recognizerId, value } = message;
+          this.logger.verbose(`Recognizer (id: ${recognizerId}): set ${key} to ${value}`);
+
+          if (!this.recognizers.has(recognizerId)) {
+            this.logger.warn(`Recognizer not ready, ignoring`);
+            return;
+          }
+
+          const recognizer = this.recognizers.get(recognizerId)!;
+          recognizer.partialWords = value;
+          recognizer.recognizer.SetPartialWords(value);
         }
-        this.logger.setLogLevel(level);
+        break;
+      case 'reset': {
+        const { recognizerId, value } = message;
+        this.retrieveFinalResult(recognizerId);
+        break;
+      }
+      case 'logLevel':
+        {
+          const level = message.value;
+          this.logger.verbose(`Set ${key} to ${level}`);
+          if (this.Vosk) {
+            this.Vosk.SetLogLevel(level);
+          }
+          this.logger.setLogLevel(level);
+        }
         break;
       default:
         this.logger.warn(`Unrecognized key ${key}`);
@@ -233,26 +259,6 @@ export class RecognizerWorker {
     }
 
     let recognizer = this.recognizers.get(recognizerId)!;
-
-    if (recognizer.sampleRate !== sampleRate) {
-      this.logger.warn(
-        `Recognizer (id: ${recognizerId}) was created with sampleRate ${recognizer.sampleRate} but audio chunk with sampleRate ${sampleRate} was received! Recreating recognizer...`
-      );
-
-      await this.createRecognizer({
-        action: 'create',
-        recognizerId,
-        sampleRate,
-        grammar: recognizer.grammar,
-      });
-
-      const newRecognizer = this.recognizers.get(recognizerId)!;
-      if (recognizer.words) {
-        newRecognizer.words = true;
-        newRecognizer.recognizer.SetWords(true);
-      }
-      recognizer = newRecognizer;
-    }
 
     const requiredSize = data.length * data.BYTES_PER_ELEMENT;
     this.allocateBuffer(requiredSize, recognizer);
