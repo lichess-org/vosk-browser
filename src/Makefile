@@ -9,6 +9,7 @@ CLAPACKROOT ?= ${KALDI_ROOT}/tools/clapack-wasm
 # https://github.com/emscripten-core/emscripten/blob/master/src/settings.js
 COMPILE_FLAGS := \
 	-r \
+	-flto \
 	-std=c++17 \
 	-Wno-unused-function \
 	-I/opt/include \
@@ -40,29 +41,29 @@ LINK_FLAGS += -O3 -s SINGLE_FILE=1 # --closure 1 leads to "Failed to sync file s
 endif
 
 LIBS = \
-	${KALDI_ROOT}/src/base/kaldi-base.bc \
-	${KALDI_ROOT}/src/cudamatrix/kaldi-cudamatrix.bc \
-	${KALDI_ROOT}/src/decoder/kaldi-decoder.bc \
-	${KALDI_ROOT}/src/feat/kaldi-feat.bc \
-	${KALDI_ROOT}/src/fstext/kaldi-fstext.bc \
-	${KALDI_ROOT}/src/gmm/kaldi-gmm.bc \
-	${KALDI_ROOT}/src/hmm/kaldi-hmm.bc \
-	${KALDI_ROOT}/src/ivector/kaldi-ivector.bc \
-	${KALDI_ROOT}/src/lat/kaldi-lat.bc \
-	${KALDI_ROOT}/src/lm/kaldi-lm.bc \
-	${KALDI_ROOT}/src/matrix/kaldi-matrix.bc \
-	${KALDI_ROOT}/src/nnet3/kaldi-nnet3.bc \
-	${KALDI_ROOT}/src/online2/kaldi-online2.bc \
-	${KALDI_ROOT}/src/transform/kaldi-transform.bc \
-	${KALDI_ROOT}/src/tree/kaldi-tree.bc \
-	${KALDI_ROOT}/src/util/kaldi-util.bc \
+	${KALDI_ROOT}/src/base/kaldi-base.a \
+	${KALDI_ROOT}/src/cudamatrix/kaldi-cudamatrix.a \
+	${KALDI_ROOT}/src/decoder/kaldi-decoder.a \
+	${KALDI_ROOT}/src/feat/kaldi-feat.a \
+	${KALDI_ROOT}/src/fstext/kaldi-fstext.a \
+	${KALDI_ROOT}/src/gmm/kaldi-gmm.a \
+	${KALDI_ROOT}/src/hmm/kaldi-hmm.a \
+	${KALDI_ROOT}/src/ivector/kaldi-ivector.a \
+	${KALDI_ROOT}/src/lat/kaldi-lat.a \
+	${KALDI_ROOT}/src/lm/kaldi-lm.a \
+	${KALDI_ROOT}/src/matrix/kaldi-matrix.a \
+	${KALDI_ROOT}/src/nnet3/kaldi-nnet3.a \
+	${KALDI_ROOT}/src/online2/kaldi-online2.a \
+	${KALDI_ROOT}/src/transform/kaldi-transform.a \
+	${KALDI_ROOT}/src/tree/kaldi-tree.a \
+	${KALDI_ROOT}/src/util/kaldi-util.a \
 	$(CLAPACKROOT)/CLAPACK-3.2.1/lapack.a \
 	$(CLAPACKROOT)/CLAPACK-3.2.1/libcblaswr.a \
 	$(CLAPACKROOT)/CBLAS/lib/cblas.a \
 	$(CLAPACKROOT)/f2c_BLAS-3.8.0/blas.a \
 	${KALDI_ROOT}/tools/openfst/lib/libfst.a \
 	${KALDI_ROOT}/tools/openfst/lib/libfstngram.a \
-	/opt/lib/libarchive.so
+	/opt/lib/libarchive.a
 
 SRC = \
 	$(SRC_ROOT)/bindings.cc \
@@ -85,14 +86,31 @@ $(VOSK_BROWSER_ROOT)/vosk-wasm.js: $(DESTDIR)/vosk.js
 $(VOSK_BROWSER_ROOT)/vosk-wasm.d.ts: vosk.d.ts
 	rsync -r vosk.d.ts $@
 
-$(DESTDIR)/vosk.bc: $(SRC)
-	mkdir -p $(dir $@)
-	$(CXX) -o $@ $(COMPILE_FLAGS) $(SRC)
+OBJ := $(patsubst $(SRC_ROOT)/%.cc,$(DESTDIR)/%.a,$(filter $(SRC_ROOT)/%.cc,$(SRC))) \
+       $(patsubst $(VOSK_ROOT)/src/%.cc,$(DESTDIR)/%.a,$(filter $(VOSK_ROOT)/src/%.cc,$(SRC)))
+OBJ := $(foreach src,$(SRC),$(DESTDIR)/$(notdir $(basename $(src))).a)
+OBJ := $(sort $(OBJ))
 
-$(DESTDIR)/vosk.js: $(DESTDIR)/vosk.bc vosk.pre.js vosk.post.js
+$(DESTDIR)/%.a: $(SRC_ROOT)/%.cc
+	mkdir -p $(dir $@)
+	$(CXX) -c -o $@ $(COMPILE_FLAGS) $<
+
+$(DESTDIR)/%.a: $(VOSK_ROOT)/src/%.cc
+	mkdir -p $(dir $@)
+	$(CXX) -c -o $@ $(COMPILE_FLAGS) $<
+
+# $(DESTDIR)/vosk.a: $(OBJ)
+# 	$(CXX) -o $@ $^
+
+# $(DESTDIR)/vosk.js: $(DESTDIR)/vosk.a vosk.pre.js vosk.post.js
+# 	mkdir -p $(dir $@)
+# 	cd $(dir $@); \
+# 	$(CXX) -o $(notdir $@) $(DESTDIR)/vosk.a $(LINK_FLAGS) $(LIBS)
+
+$(DESTDIR)/vosk.js: $(OBJ) vosk.pre.js vosk.post.js
 	mkdir -p $(dir $@)
 	cd $(dir $@); \
-	$(CXX) -o $(notdir $@) $(DESTDIR)/vosk.bc $(LINK_FLAGS) $(LIBS)
+	$(CXX) -o $(notdir $@) $(OBJ) $(LINK_FLAGS) $(LIBS)
 
 clean:
 	rm -rf ./build

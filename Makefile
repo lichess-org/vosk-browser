@@ -1,7 +1,7 @@
 MAKEFILE_ROOT := $(realpath $(dir $(firstword $(MAKEFILE_LIST))))
 ENV := 
-BUILDER_TAG ?= 0.0.6
-REPOSITORY = schlawg/
+BUILDER_TAG ?= 0.0.10
+REPOSITORY = docker.io/schlawg/
 
 ifdef DEBUG
 ENV += -e DEBUG=1

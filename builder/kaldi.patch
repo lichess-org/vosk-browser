@@ -32,7 +32,7 @@ index ed62daa50..2f11d019f 100755
 +     failure "The directory $CLAPACKROOT does not exist"
 +   fi
 +
-+   for lib in F2CLIBS/libf2c.bc lapack_WA.bc libcblaswr.bc; do
++   for lib in F2CLIBS/libf2c.a lapack_WA.a libcblaswr.a; do
 +     CLAPACKLIBS="$CLAPACKLIBS $CLAPACKROOT/$lib"
 +   done
 +
@@ -96,9 +96,9 @@ index 3ae5ed5e2..3cff6212a 100644
    XDEPENDS =
 +else ifdef IS_EMSCRIPTEN
 +  ifdef LIBNAME
-+    LIBFILE = $(LIBNAME).bc
++    LIBFILE = $(LIBNAME).a
 +  endif
-+  XDEPENDS = $(foreach dep,$(ADDLIBS), $(dir $(dep))$(notdir $(basename $(dep))).bc)
++  XDEPENDS = $(foreach dep,$(ADDLIBS), $(dir $(dep))$(notdir $(basename $(dep))).a)
  else
    ifdef LIBNAME
      LIBFILE = $(LIBNAME).a
@@ -118,8 +118,8 @@ index 3ae5ed5e2..3cff6212a 100644
  
 -$(LIBNAME).a: $(OBJFILES)
 +ifdef IS_EMSCRIPTEN
-+  $(LIBNAME).bc: $(OBJFILES)
-+	$(CXX) -o $(LIBNAME).bc $(OBJFILES)
++  $(LIBNAME).a: $(OBJFILES)
++	emar rcs $(LIBNAME).a $(OBJFILES)
 +else
 +  $(LIBNAME).a: $(OBJFILES)
  	$(AR) -cr $(LIBNAME).a $(OBJFILES)
@@ -128,22 +128,6 @@ index 3ae5ed5e2..3cff6212a 100644
  
  ifeq ($(KALDI_FLAVOR), dynamic)
  # the LIBFILE is not the same as $(LIBNAME).a
-@@ -87,11 +104,14 @@ endif
- %.a:
- 	$(MAKE) -C ${@D} ${@F}
- 
-+%.bc:
-+	$(MAKE) -C ${@D} ${@F}
-+
- %.so:
- 	$(MAKE) -C ${@D} ${@F}
- 
- clean:
--	-rm -f *.o *.a *.so *.dylib $(OBJFILES) $(TESTFILES) $(BINFILES) $(TESTOUTPUTS) tmp* *.tmp *.testlog
-+	-rm -f *.o *.a *.bc *.so *.dylib $(OBJFILES) $(TESTFILES) $(BINFILES) $(TESTOUTPUTS) tmp* *.tmp *.testlog
- 
- distclean: clean
- 	-rm -f .depend.mk
 diff --git a/src/makefiles/wasm_clapack.mk b/src/makefiles/wasm_clapack.mk
 new file mode 100644
 index 000000000..fc10b9e9c
@@ -167,7 +151,7 @@ index 000000000..fc10b9e9c
 +           -Wno-deprecated-declarations -Winit-self \
 +           -DKALDI_DOUBLEPRECISION=$(DOUBLE_PRECISION) \
 +           -DHAVE_CXXABI_H -DHAVE_CLAPACK -I../../tools/CLAPACK \
-+           -g # -DKALDI_PARANOID
++           -g -flto -r
 +
 +ifeq ($(KALDI_FLAVOR), dynamic)
 +CXXFLAGS += -fPIC
@@ -180,8 +164,8 @@ index 000000000..fc10b9e9c
 +CXXFLAGS += -Wno-mismatched-tags
 +endif
 +
-+LDFLAGS = $(EXTRA_LDFLAGS) $(OPENFSTLDFLAGS) -g
-+LDLIBS = $(EXTRA_LDLIBS) $(OPENFSTLIBS) $(CLAPACKLIBS) -lm # -lpthread -ldl
++LDFLAGS = $(EXTRA_LDFLAGS) $(OPENFSTLDFLAGS) -g -r
++LDLIBS = $(EXTRA_LDLIBS) $(OPENFSTLIBS) $(CLAPACKLIBS) -lm
 diff --git a/tools/Makefile b/tools/Makefile
 index 1ab7bbb8d..04b24de12 100644
 --- a/tools/Makefile

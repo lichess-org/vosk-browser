@@ -1,7 +1,7 @@
 {
-  "name": "vosk-browserli",
+  "name": "@lichess-org/vosk-browser",
   "version": "0.0.9",
-  "description": "Fork of ccoreilly's vosk-browser to enable mbr vectors on partial results. Praise kaldi",
+  "description": "Fork of ccoreilly's vosk-browser v0.0.8",
   "main": "./dist/vosk.js",
   "module": "./dist/vosk.js",
   "scripts": {
@@ -18,7 +18,7 @@
   "author": "Ciaran O'Reilly <ciaran@oreilly.cat>",
   "repository": {
     "type": "git",
-    "url": "git://github.com/schlawg/vosk-browser.git"
+    "url": "git://github.com/lichess-org/vosk-browser.git"
   },
   "license": "Apache-2.0",
   "dependencies": {
