@@ -1,6 +1,11 @@
 import LoadVosk, { Recognizer as VoskRecognizer, Model as VoskModel, Vosk } from './gen/vosk';
 
-import { ClientMessage, ClientMessageAudioChunk, ClientMessageSet, ClientMessageCreateRecognizer } from './vosk.interfaces';
+import {
+  ClientMessage,
+  ClientMessageAudioChunk,
+  ClientMessageSet,
+  ClientMessageCreateRecognizer,
+} from './vosk.interfaces';
 import { Logger } from './vosk.logging';
 
 const ctx: Worker = self as any;
@@ -65,7 +70,9 @@ export class RecognizerWorker {
         .then(result => {
           ctx.postMessage(result);
         })
-        .catch(error => ctx.postMessage({ event: 'error', recognizerId: message.recognizerId, error: error.message }));
+        .catch(error =>
+          ctx.postMessage({ event: 'error', recognizerId: message.recognizerId, error: error.message })
+        );
       return;
     }
 
@@ -74,7 +81,9 @@ export class RecognizerWorker {
         .then(result => {
           ctx.postMessage(result);
         })
-        .catch(error => ctx.postMessage({ event: 'error', recognizerId: message.recognizerId, error: error.message }));
+        .catch(error =>
+          ctx.postMessage({ event: 'error', recognizerId: message.recognizerId, error: error.message })
+        );
       return;
     }
 
@@ -83,7 +92,9 @@ export class RecognizerWorker {
         .then(result => {
           ctx.postMessage(result);
         })
-        .catch(error => ctx.postMessage({ event: 'error', recognizerId: message.recognizerId, error: error.message }));
+        .catch(error =>
+          ctx.postMessage({ event: 'error', recognizerId: message.recognizerId, error: error.message })
+        );
       return;
     }
 
@@ -92,7 +103,9 @@ export class RecognizerWorker {
         .then(result => {
           ctx.postMessage(result);
         })
-        .catch(error => ctx.postMessage({ event: 'error', recognizerId: message.recognizerId, error: error.message }));
+        .catch(error =>
+          ctx.postMessage({ event: 'error', recognizerId: message.recognizerId, error: error.message })
+        );
       return;
     }
 
@@ -108,7 +121,7 @@ export class RecognizerWorker {
     const storagePath = '/vosk';
     const modelPath = storagePath + '/' + modelUrl.replace(/[\W]/g, '_');
     return new Promise((resolve, reject) =>
-      LoadVosk({locateFile: () => wasmUrl})
+      LoadVosk({ locateFile: () => wasmUrl })
         .then((loaded: any) => {
           this.Vosk = loaded;
           resolve(true);
@@ -319,7 +332,9 @@ export class RecognizerWorker {
       try {
         await this.removeRecognizer(recognizer.id);
       } catch (error) {
-        this.logger.warn(`Recognizer (id: ${recognizer.id}) could not be removed. Ignoring as we are terminating.`);
+        this.logger.warn(
+          `Recognizer (id: ${recognizer.id}) could not be removed. Ignoring as we are terminating.`
+        );
       }
     }
     this.model.delete();

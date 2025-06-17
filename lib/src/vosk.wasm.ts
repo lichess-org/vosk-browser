@@ -1,4 +1,4 @@
-import { v4 as uuid } from "uuid";
+import { v4 as uuid } from 'uuid';
 
 import {
   ClientMessage,
@@ -13,10 +13,10 @@ import {
   RecognizerEvent,
   RecognizerMessage,
   ServerMessage,
-} from "./vosk.interfaces";
-import { Logger } from "./vosk.logging";
+} from './vosk.interfaces';
+import { Logger } from './vosk.logging';
 
-export * from "./vosk.interfaces";
+export * from './vosk.interfaces';
 
 export class Model extends EventTarget {
   private worker: Worker;
@@ -28,34 +28,27 @@ export class Model extends EventTarget {
   constructor(private modelUrl: string, private resolver: (x: string) => string, logLevel: number = 0) {
     super();
     this.logger.setLogLevel(logLevel);
-    this.worker = new Worker(resolver('npm/vosk/vosk.worker.js'), {type: 'module'});
+    this.worker = new Worker(resolver('npm/vosk/vosk.worker.js'), { type: 'module' });
     this.initialize();
   }
 
   private initialize() {
-    this.worker.addEventListener("message", (event) =>
-      this.handleMessage(event)
-    );
+    this.worker.addEventListener('message', event => this.handleMessage(event));
 
-    this.postMessage<ClientMessageSet>(
-      {
-        action: "set",
-        key: "logLevel",
-        value: this.logger.getLogLevel()
-      }
-    );
-    
+    this.postMessage<ClientMessageSet>({
+      action: 'set',
+      key: 'logLevel',
+      value: this.logger.getLogLevel(),
+    });
+
     this.postMessage<ClientMessageLoad>({
-      action: "load",
-      wasmUrl: this.resolver("npm/vosk/vosk.wasm"),
+      action: 'load',
+      wasmUrl: this.resolver('npm/vosk/vosk.wasm'),
       modelUrl: this.modelUrl,
     });
   }
 
-  private postMessage<T = ClientMessage>(
-    message: T,
-    options?: StructuredSerializeOptions
-  ) {
+  private postMessage<T = ClientMessage>(message: T, options?: StructuredSerializeOptions) {
     this.worker.postMessage(message, options);
   }
 
@@ -79,10 +72,7 @@ export class Model extends EventTarget {
     }
   }
 
-  public on(
-    event: ModelMessage["event"],
-    listener: (message: ModelMessage) => void
-  ) {
+  public on(event: ModelMessage['event'], listener: (message: ModelMessage) => void) {
     this.addEventListener(event, (event: any) => {
       if (event.detail && !ServerMessage.isRecognizerMessage(event.detail)) {
         listener(event.detail);
@@ -111,20 +101,18 @@ export class Model extends EventTarget {
 
   public terminate(): void {
     this.postMessage<ClientMessageTerminate>({
-      action: "terminate",
+      action: 'terminate',
     });
     this._ready = false;
   }
 
   public setLogLevel(level: number) {
     this.logger.setLogLevel(level);
-    this.postMessage<ClientMessageSet>(
-      {
-        action: "set",
-        key: "logLevel",
-        value: level
-      }
-    );
+    this.postMessage<ClientMessageSet>({
+      action: 'set',
+      key: 'logLevel',
+      value: level,
+    });
   }
 
   public registerRecognizer(recognizer: KaldiRecognizer) {
@@ -145,39 +133,32 @@ export class Model extends EventTarget {
       constructor(sampleRate: number, grammar?: string) {
         super();
         if (!model.ready) {
-          throw new Error(
-            "Cannot create KaldiRecognizer. Model is either not ready or has been terminated"
-          );
+          throw new Error('Cannot create KaldiRecognizer. Model is either not ready or has been terminated');
         }
 
         model.registerRecognizer(this);
 
         model.postMessage<ClientMessageCreateRecognizer>({
-          action: "create",
+          action: 'create',
           recognizerId: this.id,
           sampleRate,
           grammar,
         });
       }
 
-      public on(
-        event: RecognizerEvent,
-        listener: (message: RecognizerMessage) => void
-      ) {
+      public on(event: RecognizerEvent, listener: (message: RecognizerMessage) => void) {
         this.addEventListener(event, (event: any) => {
           listener(event?.detail);
         });
       }
 
       public setWords(words: boolean): void {
-        model.postMessage<ClientMessageSet>(
-          {
-            action: "set",
-            recognizerId: this.id,
-            key: "words",
-            value: words
-          }
-        );
+        model.postMessage<ClientMessageSet>({
+          action: 'set',
+          recognizerId: this.id,
+          key: 'words',
+          value: words,
+        });
       }
 
       public acceptWaveform(buffer: AudioBuffer): void {
@@ -192,17 +173,19 @@ export class Model extends EventTarget {
         // AudioBuffer samples are represented as floating point numbers between -1.0 and 1.0 whilst
         // Kaldi expects them to be between -32768 and 32767 (the range of a signed int16)
         // Should this be handled by the library (better in the C codebase) or left to the end-user to decide?
-        const data = buffer.map((value) => value * 0x8000);
+        const data = buffer.map(value => value * 0x8000);
         if (!(data instanceof Float32Array)) {
-          throw new Error(
-            `Channel data is not a Float32Array as expected: ${data}`
-          );
+          throw new Error(`Channel data is not a Float32Array as expected: ${data}`);
         }
 
-        model.logger.debug(`Recognizer (id: ${this.id}): Sending audioChunk 0=${data[0]} ${data.length}=${data[data.length - 1]}`);
+        model.logger.debug(
+          `Recognizer (id: ${this.id}): Sending audioChunk 0=${data[0]} ${data.length}=${
+            data[data.length - 1]
+          }`
+        );
         model.postMessage<ClientMessageAudioChunk>(
           {
-            action: "audioChunk",
+            action: 'audioChunk',
             data,
             recognizerId: this.id,
             sampleRate: sampleRate,
@@ -215,7 +198,7 @@ export class Model extends EventTarget {
 
       public retrieveFinalResult(): void {
         model.postMessage<ClientMessageRetrieveFinalResult>({
-          action: "retrieveFinalResult",
+          action: 'retrieveFinalResult',
           recognizerId: this.id,
         });
       }
@@ -224,7 +207,7 @@ export class Model extends EventTarget {
         model.unregisterRecognizer(this.id);
 
         model.postMessage<ClientMessageRemoveRecognizer>({
-          action: "remove",
+          action: 'remove',
           recognizerId: this.id,
         });
       }
@@ -232,13 +215,17 @@ export class Model extends EventTarget {
   }
 }
 
-export type KaldiRecognizer = InstanceType<Model["KaldiRecognizer"]>;
+export type KaldiRecognizer = InstanceType<Model['KaldiRecognizer']>;
 
-export async function createModel(modelUrl: string, resolver: (x: string) => string, logLevel: number = 0): Promise<Model> {
+export async function createModel(
+  modelUrl: string,
+  resolver: (x: string) => string,
+  logLevel: number = 0
+): Promise<Model> {
   const model = new Model(modelUrl, resolver, logLevel);
 
   return new Promise((resolve, reject) =>
-    model.on("load", (message: any) => {
+    model.on('load', (message: any) => {
       if (message.result) {
         resolve(model);
       }

@@ -1,8 +1,7 @@
 .*
-**/tsconfig.json
-**/rollup.config.js
+tsconfig.json
+build.mjs
 node_modules
 src
-dist/vosk.worker.*
 dist/vosk.interfaces.*
 dist/vosk.logging.*

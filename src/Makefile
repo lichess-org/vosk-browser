@@ -27,6 +27,7 @@ LINK_FLAGS := \
 	-s ENVIRONMENT=worker \
 	-s EXPORTED_RUNTIME_METHODS=['FS','IDBFS'] \
 	-s EXPORT_ES6=1 \
+	-s USE_ES6_IMPORT_META=0 \
 	-s EXPORTED_FUNCTIONS=['_f_init','_malloc','_free'] \
 	--post-js $(SRC_ROOT)/vosk.post.js \
 	-lidbfs.js

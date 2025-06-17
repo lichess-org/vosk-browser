@@ -1,6 +1,6 @@
 {
   "name": "@lichess-org/vosk-browser",
-  "version": "0.0.9",
+  "version": "0.0.1",
   "description": "Fork of ccoreilly's vosk-browser v0.0.8",
   "main": "./dist/vosk.wasm.js",
   "module": "./dist/vosk.wasm.js",

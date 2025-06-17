@@ -73,7 +73,9 @@ export namespace ClientMessage {
     return message?.action === 'audioChunk';
   }
 
-  export function isRecognizerCreateMessage(message: ClientMessage): message is ClientMessageCreateRecognizer {
+  export function isRecognizerCreateMessage(
+    message: ClientMessage
+  ): message is ClientMessageCreateRecognizer {
     return message?.action === 'create';
   }
 
@@ -83,7 +85,9 @@ export namespace ClientMessage {
     return message?.action === 'retrieveFinalResult';
   }
 
-  export function isRecognizerRemoveMessage(message: ClientMessage): message is ClientMessageRemoveRecognizer {
+  export function isRecognizerRemoveMessage(
+    message: ClientMessage
+  ): message is ClientMessageRemoveRecognizer {
     return message?.action === 'remove';
   }
 }
