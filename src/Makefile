@@ -18,8 +18,6 @@ COMPILE_FLAGS := \
 	-I$(SRC_ROOT)
 
 LINK_FLAGS := \
-	--pre-js $(SRC_ROOT)/vosk.pre.js \
-	--post-js $(SRC_ROOT)/vosk.post.js \
 	--bind \
 	-std=c++17 \
 	-s ALLOW_MEMORY_GROWTH=1 \
@@ -28,6 +26,9 @@ LINK_FLAGS := \
 	-s EXPORT_NAME=LoadVosk \
 	-s ENVIRONMENT=worker \
 	-s EXPORTED_RUNTIME_METHODS=['FS','IDBFS'] \
+	-s EXPORT_ES6=1 \
+	-s EXPORTED_FUNCTIONS=['_f_init','_malloc','_free'] \
+	--post-js $(SRC_ROOT)/vosk.post.js \
 	-lidbfs.js
 
 ifdef DEBUG
@@ -37,7 +38,7 @@ LINK_FLAGS += -O0 -gsource-map -s DEMANGLE_SUPPORT=1
 else
 DESTDIR ?= ${DST_ROOT}/build/release
 COMPILE_FLAGS += -O3
-LINK_FLAGS += -O3 -s SINGLE_FILE=1 # --closure 1 leads to "Failed to sync file system: Error: Unsupported data type"
+LINK_FLAGS += -O3
 endif
 
 LIBS = \
@@ -61,9 +62,11 @@ LIBS = \
 	$(CLAPACKROOT)/CLAPACK-3.2.1/libcblaswr.a \
 	$(CLAPACKROOT)/CBLAS/lib/cblas.a \
 	$(CLAPACKROOT)/f2c_BLAS-3.8.0/blas.a \
+	$(CLAPACKROOT)/libf2c/libf2c.a \
 	${KALDI_ROOT}/tools/openfst/lib/libfst.a \
 	${KALDI_ROOT}/tools/openfst/lib/libfstngram.a \
-	/opt/lib/libarchive.a
+	/opt/lib/libarchive.a \
+	/opt/lib/libz.a
 
 SRC = \
 	$(SRC_ROOT)/bindings.cc \
@@ -78,13 +81,11 @@ all: dist sync-lib
 
 dist: $(DESTDIR)/vosk.js
 
-sync-lib: $(VOSK_BROWSER_ROOT)/vosk-wasm.js $(VOSK_BROWSER_ROOT)/vosk-wasm.d.ts
-
-$(VOSK_BROWSER_ROOT)/vosk-wasm.js: $(DESTDIR)/vosk.js
-	rsync -r $(DESTDIR)/vosk.js $@
-	
-$(VOSK_BROWSER_ROOT)/vosk-wasm.d.ts: vosk.d.ts
-	rsync -r vosk.d.ts $@
+sync-lib: $(DESTDIR)/vosk.js
+	mkdir -p $(VOSK_BROWSER_ROOT)/gen
+	rsync -r vosk.d.ts $(VOSK_BROWSER_ROOT)/gen/vosk.d.ts
+	rsync -r $(DESTDIR)/vosk.js $(VOSK_BROWSER_ROOT)/gen/vosk.js
+	rsync -r $(DESTDIR)/vosk.wasm $(VOSK_BROWSER_ROOT)/../dist/vosk.wasm	
 
 OBJ := $(patsubst $(SRC_ROOT)/%.cc,$(DESTDIR)/%.a,$(filter $(SRC_ROOT)/%.cc,$(SRC))) \
        $(patsubst $(VOSK_ROOT)/src/%.cc,$(DESTDIR)/%.a,$(filter $(VOSK_ROOT)/src/%.cc,$(SRC)))
@@ -99,15 +100,7 @@ $(DESTDIR)/%.a: $(VOSK_ROOT)/src/%.cc
 	mkdir -p $(dir $@)
 	$(CXX) -c -o $@ $(COMPILE_FLAGS) $<
 
-# $(DESTDIR)/vosk.a: $(OBJ)
-# 	$(CXX) -o $@ $^
-
-# $(DESTDIR)/vosk.js: $(DESTDIR)/vosk.a vosk.pre.js vosk.post.js
-# 	mkdir -p $(dir $@)
-# 	cd $(dir $@); \
-# 	$(CXX) -o $(notdir $@) $(DESTDIR)/vosk.a $(LINK_FLAGS) $(LIBS)
-
-$(DESTDIR)/vosk.js: $(OBJ) vosk.pre.js vosk.post.js
+$(DESTDIR)/vosk.js: $(OBJ)
 	mkdir -p $(dir $@)
 	cd $(dir $@); \
 	$(CXX) -o $(notdir $@) $(OBJ) $(LINK_FLAGS) $(LIBS)

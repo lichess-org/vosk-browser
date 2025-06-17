@@ -3,5 +3,6 @@
 **/rollup.config.js
 node_modules
 src
-types
-dist/worker.d.ts
+dist/vosk.worker.*
+dist/vosk.interfaces.*
+dist/vosk.logging.*

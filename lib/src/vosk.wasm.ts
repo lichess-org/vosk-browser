@@ -1,6 +1,5 @@
 import { v4 as uuid } from "uuid";
 
-import WebWorker from "web-worker:./worker.ts";
 import {
   ClientMessage,
   ClientMessageSet,
@@ -14,8 +13,10 @@ import {
   RecognizerEvent,
   RecognizerMessage,
   ServerMessage,
-} from "./interfaces";
-import { Logger } from "./utils/logging";
+} from "./vosk.interfaces";
+import { Logger } from "./vosk.logging";
+
+export * from "./vosk.interfaces";
 
 export class Model extends EventTarget {
   private worker: Worker;
@@ -24,10 +25,10 @@ export class Model extends EventTarget {
   private logger: Logger = new Logger();
   private recognizers = new Map<string, KaldiRecognizer>();
 
-  constructor(private modelUrl: string, logLevel: number = 0) {
+  constructor(private modelUrl: string, private resolver: (x: string) => string, logLevel: number = 0) {
     super();
     this.logger.setLogLevel(logLevel);
-    this.worker = new WebWorker();
+    this.worker = new Worker(resolver('npm/vosk/vosk.worker.js'), {type: 'module'});
     this.initialize();
   }
 
@@ -46,6 +47,7 @@ export class Model extends EventTarget {
     
     this.postMessage<ClientMessageLoad>({
       action: "load",
+      wasmUrl: this.resolver("npm/vosk/vosk.wasm"),
       modelUrl: this.modelUrl,
     });
   }
@@ -232,8 +234,8 @@ export class Model extends EventTarget {
 
 export type KaldiRecognizer = InstanceType<Model["KaldiRecognizer"]>;
 
-export async function createModel(modelUrl: string, logLevel: number = 0): Promise<Model> {
-  const model = new Model(modelUrl, logLevel);
+export async function createModel(modelUrl: string, resolver: (x: string) => string, logLevel: number = 0): Promise<Model> {
+  const model = new Model(modelUrl, resolver, logLevel);
 
   return new Promise((resolve, reject) =>
     model.on("load", (message: any) => {

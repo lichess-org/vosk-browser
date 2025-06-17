@@ -138,3 +138,5 @@ static int copy_data(struct archive *ar, struct archive *aw) {
         }
     }
 }
+
+extern "C" int MAIN__() {} // stub for clapack-wasm/libf2c.a

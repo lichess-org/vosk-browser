@@ -1,5 +1,6 @@
 export interface ClientMessageLoad {
   action: 'load';
+  wasmUrl: string;
   modelUrl: string;
 }
 

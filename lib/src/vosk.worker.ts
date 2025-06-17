@@ -1,7 +1,7 @@
-import LoadVosk, * as VoskWasm from './vosk-wasm';
+import LoadVosk, { Recognizer as VoskRecognizer, Model as VoskModel, Vosk } from './gen/vosk';
 
-import { ClientMessage, ClientMessageAudioChunk, ClientMessageSet, ClientMessageCreateRecognizer } from './interfaces';
-import { Logger } from './utils/logging';
+import { ClientMessage, ClientMessageAudioChunk, ClientMessageSet, ClientMessageCreateRecognizer } from './vosk.interfaces';
+import { Logger } from './vosk.logging';
 
 const ctx: Worker = self as any;
 
@@ -9,14 +9,14 @@ export interface Recognizer {
   id: string;
   buffAddr?: number;
   buffSize?: number;
-  recognizer: VoskWasm.Recognizer;
+  recognizer: VoskRecognizer;
   sampleRate: number;
   words?: boolean;
   grammar?: string;
 }
 export class RecognizerWorker {
-  private Vosk: VoskWasm.Vosk;
-  private model: VoskWasm.Model;
+  private Vosk: Vosk;
+  private model: VoskModel;
   private recognizers = new Map<string, Recognizer>();
   private logger = new Logger();
 
@@ -34,7 +34,7 @@ export class RecognizerWorker {
     this.logger.debug(JSON.stringify(message));
 
     if (ClientMessage.isLoadMessage(message)) {
-      const { modelUrl } = message;
+      const { modelUrl, wasmUrl } = message;
 
       if (!modelUrl) {
         ctx.postMessage({
@@ -43,7 +43,7 @@ export class RecognizerWorker {
         });
       }
 
-      this.load(modelUrl)
+      this.load(modelUrl, wasmUrl)
         .then(result => {
           ctx.postMessage({ event: 'load', result });
         })
@@ -104,11 +104,11 @@ export class RecognizerWorker {
     ctx.postMessage({ event: 'error', error: `Unknown message ${JSON.stringify(message)}` });
   }
 
-  private async load(modelUrl: string): Promise<boolean> {
+  private async load(modelUrl: string, wasmUrl: string): Promise<boolean> {
     const storagePath = '/vosk';
     const modelPath = storagePath + '/' + modelUrl.replace(/[\W]/g, '_');
     return new Promise((resolve, reject) =>
-      LoadVosk()
+      LoadVosk({locateFile: () => wasmUrl})
         .then((loaded: any) => {
           this.Vosk = loaded;
           resolve(true);
@@ -171,7 +171,7 @@ export class RecognizerWorker {
       `Creating recognizer (id: ${recognizerId}) with sample rate ${sampleRate} and grammar ${grammar}`
     );
     try {
-      let recognizer: VoskWasm.Recognizer;
+      let recognizer: VoskRecognizer;
       if (grammar) {
         recognizer = new this.Vosk.Recognizer(this.model, sampleRate, grammar);
       } else {

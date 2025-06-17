@@ -2,11 +2,11 @@
   "name": "@lichess-org/vosk-browser",
   "version": "0.0.9",
   "description": "Fork of ccoreilly's vosk-browser v0.0.8",
-  "main": "./dist/vosk.js",
-  "module": "./dist/vosk.js",
+  "main": "./dist/vosk.wasm.js",
+  "module": "./dist/vosk.wasm.js",
   "scripts": {
-    "build": "rollup -c",
-    "clean": "rm -rf ./node_modules && rm -rf ./dist"
+    "build": "node build.mjs && pnpm tsc",
+    "clean": "rm -f ./dist/vosk.*.*"
   },
   "keywords": [
     "kaldi",
@@ -22,18 +22,11 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
-    "uuid": "9.0.0"
+    "uuid": "11.1.0"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^22.0.2",
-    "@rollup/plugin-node-resolve": "^14.0.0",
     "@types/uuid": "^8.3.4",
-    "rollup": "^2.79.0",
-    "rollup-plugin-typescript2": "^0.33.0",
-    "rollup-plugin-web-worker-loader": "^1.6.1",
-    "ts-loader": "^9.3.1",
-    "tslib": "^2.4.0",
-    "typescript": "^4.8.2",
-    "worker-loader": "^3.0.8"
+    "esbuild": "^0.25.5",
+    "typescript": "^5.8.3"
   }
 }
